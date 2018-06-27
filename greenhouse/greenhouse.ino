@@ -1,10 +1,8 @@
 #include <Wire.h>
 #include <SeeedOLED.h>
 #include <EEPROM.h>
-#include "DHT.h"
-#include <TimerOne.h>
 #include "Arduino.h"
-#include "SI114X.h"
+
 
 void setup() {
   // put your setup code here, to run once:
