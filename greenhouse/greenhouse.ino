@@ -5,6 +5,8 @@
 #include <relay.h>
 #include "DHT.h"
 #include "SI114X.h"
+#include "soil_moisture_sensor.h"
+
 
 #define DHTPIN          A0     // what pin we're connected to
 #define MoisturePin     A1
@@ -79,6 +81,8 @@ float Volume     = 0;
 unsigned long counter = 0;
 
 Relay relay(RelayPin);
+SoilMoistureSensor moistureSensor(MoisturePin);
+
 SI114X SI1145 = SI114X();
 DHT dht(DHTPIN, DHTTYPE);
 float DHTHumidity    = 0;
@@ -151,6 +155,13 @@ void setup() {
 
 void loop() { // main code
   relay.off();
+
+  //Read from the Moisturesensor 
+ MoisHumidity   = analogRead(MoisturePin)/7;
+
+//show MoisHuidity on screen
+DisplayMoisture();
+
 }
 
 void StandbytoWatering()
@@ -195,4 +206,16 @@ void EncoderRotate()
     } else {
     }
 }
+
+void DisplayMoisture() 
+{
+    sprintf(buffer,"Moisture");
+    SeeedOled.setTextXY(1,4);          //Set the cursor to Xth Page, Yth Column  
+    SeeedOled.putString(buffer);
+
+    sprintf(buffer,"%d.%d%%",(int)(MoisHumidity),(int)((int)(MoisHumidity*100) % 100));
+    SeeedOled.setTextXY(2,6);          //Set the cursor to Xth Page, Yth Column  
+    SeeedOled.putString(buffer);
+}
+
 
