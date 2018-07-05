@@ -6,7 +6,7 @@
 #include "DHT.h"
 #include "SI114X.h"
 #include "soil_moisture_sensor.h"
-
+#include "GroveEncoder.h"
 
 #define DHTPIN          A0     // what pin we're connected to
 #define MoisturePin     A1
@@ -85,6 +85,13 @@ SoilMoistureSensor moistureSensor(MoisturePin);
 
 SI114X SI1145 = SI114X();
 DHT dht(DHTPIN, DHTTYPE);
+
+int encodercntr = 0;
+void myCallback(int newValue) {
+  encodercntr++;
+}
+GroveEncoder myEncoder(EncoderPin1, &myCallback);
+
 float DHTHumidity    = 0;
 float DHTTemperature = 0;
 float MoisHumidity   = 100;
@@ -100,7 +107,8 @@ void setup() {
   SeeedOled.setTextXY(0,0);          //Set the cursor to Xth Page, Yth Column  
 
   SeeedOled.putString("Smart Greenhouse!");
-  //    encoder.Timer_init();
+  
+  //encoder.Timer_init();
   
     /* Init DHT11 */
     Serial.begin(9600); 
@@ -109,11 +117,11 @@ void setup() {
     
     /* Init Button */
     pinMode(ButtonPin,INPUT);
-    attachInterrupt(0,ButtonClick,FALLING);
+    //attachInterrupt(0,ButtonClick,FALLING);
     /* Init Encoder */
     pinMode(EncoderPin1,INPUT);
     pinMode(EncoderPin2,INPUT);
-    attachInterrupt(1,EncoderRotate,RISING);   
+    //attachInterrupt(1,EncoderRotate,RISING);   
 
     /* Init UV */
     while (!SI1145.Begin()) {
@@ -125,43 +133,35 @@ void setup() {
     
     /* Init Relay      */
     pinMode(RelayPin,OUTPUT);
-    /* The First time power on to write the default data to EEPROM */
-    if (EEPROM.read(EEPROMAddress) == 0xff) {
-        EEPROM.write(EEPROMAddress,0x00);
-        EEPROM.write(++EEPROMAddress,SystemLimens.UVIndex_Limen);
-        EEPROM.write(++EEPROMAddress,SystemLimens.DHTHumidity_Hi);
-        EEPROM.write(++EEPROMAddress,SystemLimens.DHTHumidity_Low);
-        EEPROM.write(++EEPROMAddress,SystemLimens.DHTTemperature_Hi);
-        EEPROM.write(++EEPROMAddress,SystemLimens.DHTTemperature_Low);
-        EEPROM.write(++EEPROMAddress,SystemLimens.MoisHumidity_Limen);
-        EEPROM.write(++EEPROMAddress,((int)(SystemLimens.WaterVolume*100))/255);    /*  */
-        EEPROM.write(++EEPROMAddress,((int)(SystemLimens.WaterVolume*100))%255);
-    } else { /* If It's the first time power on , read the last time data */
-        EEPROMAddress++;
-        SystemLimens.UVIndex_Limen      = EEPROM.read(EEPROMAddress++);
-        SystemLimens.DHTHumidity_Hi     = EEPROM.read(EEPROMAddress++);
-        SystemLimens.DHTHumidity_Low    = EEPROM.read(EEPROMAddress++);
-        SystemLimens.DHTTemperature_Hi  = EEPROM.read(EEPROMAddress++);
-        SystemLimens.DHTTemperature_Low = EEPROM.read(EEPROMAddress++);
-        SystemLimens.MoisHumidity_Limen = EEPROM.read(EEPROMAddress++);
-        SystemLimens.WaterVolume =   (EEPROM.read(EEPROMAddress++)*255 + EEPROM.read(EEPROMAddress))/100.0;
-    }
-    
     StartTime = millis();
     WorkingStatus = Standby;
     SystemWarning = NoWarning;
 }
 
+// counters for test
+int clicks = 0;
 
 void loop() { // main code
   relay.off();
 
-  //Read from the Moisturesensor 
+  // Read from the Moisturesensor 
  MoisHumidity   = analogRead(MoisturePin)/7;
 
-//show MoisHuidity on screen
+// show MoisHuidity on screen
 DisplayMoisture();
 
+int buttonState = digitalRead(ButtonPin);
+
+if (buttonState == HIGH) {
+        SeeedOled.setTextXY(3,0); 
+        sprintf(buffer,"Clicks: %d", ++clicks);
+        SeeedOled.putString(buffer);
+    }
+
+  SeeedOled.setTextXY(4,0);  //Set the cursor to Xth Page, Yth Column 
+  sprintf(buffer,"Encoder: %d", encodercntr);
+  SeeedOled.putString(buffer);
+  
 }
 
 void StandbytoWatering()
@@ -176,36 +176,6 @@ void StandbytoWatering()
     SeeedOled.putString("Volume:");
     StartTime = millis();
 }
-void ButtonClick()
-{
-    
-    if(digitalRead(ButtonPin) == 0){
-        delay(10);
-        if(digitalRead(ButtonPin) == 0){
-            ButtonFlag = 1;
-        }
-    }  
-}
-
-
-void EncoderRotate()
-{
-    if(digitalRead(EncoderPin1) == 1) {
-        delay(10);
-        if(digitalRead(EncoderPin1) == 1) {
-            if(EncoderFlag == 0) {
-                EncoderFlag = 1;
-                if(digitalRead(EncoderPin2) == 1) {
-                    EncoderRoateDir = Clockwise;
-                } else {
-                    EncoderRoateDir = Anticlockwise;
-                }
-           }
-        } else {
-        }
-    } else {
-    }
-}
 
 void DisplayMoisture() 
 {
@@ -217,5 +187,3 @@ void DisplayMoisture()
     SeeedOled.setTextXY(2,6);          //Set the cursor to Xth Page, Yth Column  
     SeeedOled.putString(buffer);
 }
-
-
