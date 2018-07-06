@@ -136,18 +136,4 @@ void displayWaterFlowRate(){
             SeeedOled.putString(buffer); 
             }
 
-//Below is not finished code            
-//Caluclate waterflow This is the code that was handling the watering case
-void displayWaterFlow(){
-               if(digitalRead(WaterflowPin) == 1) {
-                if (WaterflowFlag == 0) {
-                    WaterflowFlag = 1;
-                    NbTopsFan++; 
-                } 
-               }
-               else {
-            if (WaterflowFlag == 1) {
-                WaterflowFlag = 0;
-            }
-}
-}
+
