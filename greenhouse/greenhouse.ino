@@ -147,7 +147,6 @@ void displayWaterFlowRate() {
             
             }
             SeeedOled.setTextXY(6,10);
-<<<<<<< HEAD
             SeeedOled.putString(buffer); 
             }
 
@@ -167,7 +166,5 @@ void displayInformation(const char description, int value, int xCoordinate, int 
 }
 
 
-=======
-            SeeedOled.putString(buffer);
-}
->>>>>>> 0a908809e1403c0b38d02b781b937eabe60ae82e
+    
+
