@@ -88,9 +88,9 @@ void setup() {
   pinMode(RelayPin, OUTPUT);
 
   /* Init UV */
-  while (!SI1145.Begin()) {
-    delay(1000);
-  }
+   while (!SI1145.Begin()) {
+     delay(1000);
+   }
   //StartTime = millis();
 }
 
@@ -98,15 +98,24 @@ void loop() {
   myPump.off();
 
   // Read from the Moisturesensor
-  MoisHumidity   = analogRead(MoisturePin) / 7;
+  //MoisHumidity   = analogRead(MoisturePin) / 7;
+  MoisHumidity = humiditySensor.readHumidity();
   // show MoisHuidity on screen
   //displayMoisture();
   displayInformation("Moisture: ",(int)(MoisHumidity) ,1 ,0 );
 
   //read from waterflow
-  WaterflowRate = waterFlowSensor.measure_flow_rate();
+  WaterflowRate = 0; //waterFlowSensor.measure_flow_rate();
   // show waterflowrate on screen
   displayWaterFlowRate();
+
+  uint16_t _vis = SI1145.ReadVisible();
+  uint16_t _ir = SI1145.ReadIR();
+  uint16_t _uv = SI1145.ReadUV();
+
+  SeeedOled.setTextXY(7, 0);
+  //char* str = "Sunlight: " << _vis << "ir "<< _ir << "uv " _uv;
+  //SeeedOled.putString(str);
 
   int buttonState = digitalRead(ButtonPin);
 
@@ -122,14 +131,13 @@ void loop() {
 
 }
 
-void displayMoisture()
-{
+void displayMoisture() {
   sprintf(buffer, "Moisture: ", "%d.%d%%", (int)(MoisHumidity), (int)((int)(MoisHumidity * 100) % 100));
   SeeedOled.setTextXY(1, 0);         //Set the cursor to Xth Page, Yth Column
   SeeedOled.putString(buffer);
 }
 
-void displayWaterFlowRate(){
+void displayWaterFlowRate() {
   sprintf(buffer,"%2d L/H",WaterflowRate);
             SeeedOled.setTextXY(5,10);
             SeeedOled.putString(buffer);
@@ -139,6 +147,7 @@ void displayWaterFlowRate(){
             
             }
             SeeedOled.setTextXY(6,10);
+<<<<<<< HEAD
             SeeedOled.putString(buffer); 
             }
 
@@ -158,3 +167,7 @@ void displayInformation(const char description, int value, int xCoordinate, int 
 }
 
 
+=======
+            SeeedOled.putString(buffer);
+}
+>>>>>>> 0a908809e1403c0b38d02b781b937eabe60ae82e
