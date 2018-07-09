@@ -47,6 +47,12 @@ char buffer[30];
 int clicks = 0;
 int encodercntr = 0;
 
+//Variables for displaying information on screen
+String desription = "";
+float value = 0;
+float xCoordinate = 0;
+float yCoordinate = 0;
+
 void myCallback(int newValue) {
   encodercntr++;
 }
@@ -94,7 +100,8 @@ void loop() {
   // Read from the Moisturesensor
   MoisHumidity   = analogRead(MoisturePin) / 7;
   // show MoisHuidity on screen
-  displayMoisture();
+  //displayMoisture();
+  displayInformation("Moisture: ",(int)(MoisHumidity) ,1 ,0 );
 
   //read from waterflow
   WaterflowRate = waterFlowSensor.measure_flow_rate();
@@ -129,11 +136,25 @@ void displayWaterFlowRate(){
 
             if ((int)((int)(Volume*100) %100) < 10 ) {
                 sprintf(buffer,"%2d.0%d L",(int)(Volume),(int)((int)(Volume*100) %100));
-            } else {
-                sprintf(buffer,"%2d.%2d L",(int)(Volume),(int)((int)(Volume*100) %100));
+            
             }
             SeeedOled.setTextXY(6,10);
             SeeedOled.putString(buffer); 
             }
+
+/**
+ * Displays information on the screen
+ * description: the variable one wishes to show 
+ * value: the value of the variable shown
+ * unit: the unit of measurement used for the value
+ * xCoordinate: the x-coordinate where to write on the display
+ * yCoordinate: the y-coordinate where to write on the display
+ */
+void displayInformation(const char description, int value, int xCoordinate, int yCoordiate){
+  sprintf(buffer, description, "%d.%d%%", (int)(value), (int)((int)(value * 100) % 100));
+  SeeedOled.setTextXY(xCoordinate, yCoordinate);         //Set the cursor to Xth Page, Yth Column
+  SeeedOled.putString(buffer);
+  
+}
 
 
