@@ -101,7 +101,7 @@ void GroveEncoder::updateEncoderFast()
 
     if(optCallBack != NULL) {
       // Only process the callback if there's new data to post.
-      static int prevValue = 0xDEADBEEF; // squelch the warning.
+      static int prevValue = 0x7EADBEEF; // squelch the warning.
       if (value != prevValue) {
         prevValue = value;
         optCallBack(value);
