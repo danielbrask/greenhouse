@@ -1,15 +1,14 @@
-#include <Encoder.h>
-
 #include <Wire.h>
 #include <SeeedOLED.h>
 #include <EEPROM.h>
 #include "Arduino.h"
-#include <relay.h>
+#include "relay.h"
 #include "DHT.h"
 #include "SI114X.h"
 #include "soil_moisture_sensor.h"
 #include "water_flow_sensor.h"
-#include "Encoder.h"
+#include "RotaryEncoder.h"
+
 
 const int DHTPIN = 0xA0;    // what pin we're connected to
 const int MoisturePin = 0xA1;
@@ -26,9 +25,7 @@ bool ButtonClicked = false;
 int clicks = 0;
 int encodercntr = 0;
 
-
-//GroveEncoder myEncoder(EncoderPin1, &myCallback);
-Encoder myEncoder(EncoderPin1, 0);
+RotaryEncoder myEncoder(EncoderPin1, EncoderPin2);
 Relay myPump(RelayPin);
 SoilMoistureSensor moistureSensor(MoisturePin);
 SI114X SI1145 = SI114X();
@@ -54,7 +51,7 @@ void setup() {
   pinMode(ButtonPin, INPUT);
   attachInterrupt(0,ButtonClick,FALLING);
 
-  //pinMode(EncoderPin1, INPUT);
+  pinMode(EncoderPin1, INPUT);
   pinMode(EncoderPin2, INPUT);
   attachInterrupt(1,EncoderRotate,RISING);
 
@@ -69,6 +66,8 @@ void setup() {
 }
 
 void loop() {
+  myEncoder.tick();
+
   auto MoisHumidity = humiditySensor.readHumidity();
   auto WaterflowRate = waterFlowSensor.measure_flow_rate();
   auto _vis = SI1145.ReadVisible();
@@ -81,8 +80,11 @@ void loop() {
   displayText("IR: ", (int)_ir, 6, 0);
   displayText("UV: ", (int)_uv, 7, 0);
   displayText("Clicks: ", 2, 0);
-  displayText("Encoder: ", encodercntr, 3, 0);
-
+  
+  int _pos = myEncoder.getPosition();
+  //int _dir = 0;//myEncoder.getDirection();
+  displayText("Enc: ", _pos, 3, 0);
+  //displayText("Dir: ", _dir, 3, 9);
   if (ButtonClicked == true) {
     if(isPumpOn == false){
       myPump.on();
@@ -127,15 +129,21 @@ void ButtonClick() {
   }
 }
 
-void EncoderRotate() {
-if (myEncoder.rotate_flag == 1)
-  {
-    if (myEncoder.direct == 1)
-    {
-      encodercntr++;
-    } else {
-    encodercntr--;
-    }
-    encoder.rotate_flag = 0;
-  }
-}
+// void EncoderRotate() {
+  
+//     if(digitalRead(EncoderPin1) == 1) {
+//         delay(10);
+//         if(digitalRead(EncoderPin1) == 1) {
+//             if(EncoderFlag == 0) {
+//                 EncoderFlag = 1;
+//                 if(digitalRead(EncoderPin2) == 1) {
+//                     encodercntr++;
+//                 } else {
+//                     encodercntr--;
+//                 }
+//            }
+//         } else {
+//         }
+//     } else {
+//     }
+// }
