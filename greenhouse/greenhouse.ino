@@ -92,14 +92,16 @@ void loop() {
 
   //Code for running the different programs
   switch(programInt != 0){
-      case 0:{
-    overviewProgram(MoisHumidity, WaterflowRate, _vis, _ir, _uv);
-      }
       case 1:{
         chilliProgram();
+        break;
       }
       case 2:{
         carrotProgram();
+        break;
+      }
+      default: {
+      overviewProgram(MoisHumidity, WaterflowRate, _vis, _ir, _uv);
       }
     }
 }
