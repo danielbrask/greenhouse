@@ -18,8 +18,6 @@ const int EncoderPin2 = 0x4;
 const int WaterflowPin = 0x5;
 const int RelayPin = 0x6;
 
-char buffer[40];
-
 // counters for test
 bool isPumpOn = false;
 bool ButtonClicked = false;
@@ -27,7 +25,6 @@ int clicks = 0;
 int encodercntr = 0;
 
 //Variables for displaying information on screen
-String desription = "";
 float value = 0;
 
 const int programInt = 0; // remove this after defining the proper way of handling programs
@@ -36,13 +33,19 @@ void myCallback(int newValue) {
   encodercntr++;
 }
 
-GroveEncoder myEncoder(EncoderPin1, &myCallback);
+struct Global{
+  float MoisHumidity;
+  float WaterflowRate;
+  uint16_t  vis;
+  uint16_t  ir;
+  uint16_t  uv;
+};
+
 Relay myPump(RelayPin);
 SoilMoistureSensor moistureSensor(MoisturePin);
 SI114X SI1145 = SI114X();
 DHT humiditySensor(DHTPIN, DHTTYPE);
 WaterFlowSensor waterFlowSensor(WaterflowPin);
-//GroveButton myButton(ButtonPin)
 
 void setup() {
   Wire.begin();
@@ -64,7 +67,7 @@ void setup() {
 
   //pinMode(EncoderPin1, INPUT);
   pinMode(EncoderPin2, INPUT);
-  //attachInterrupt(1,EncoderRotate,RISING);
+  attachInterrupt(1,EncoderRotate,RISING);
 
   pinMode(WaterflowPin, INPUT);
   pinMode(RelayPin, OUTPUT);
@@ -73,35 +76,36 @@ void setup() {
    while (!SI1145.Begin()) {
      delay(1000);
    }
-  //StartTime = millis();
 }
 
+Global global;
+
 void loop() {
-  //myPump.off();
 
-  // Read from all sensors
-  auto MoisHumidity = humiditySensor.readHumidity();
-  auto WaterflowRate = waterFlowSensor.measure_flow_rate();
-  auto _vis = SI1145.ReadVisible();
-  auto _ir = SI1145.ReadIR();
-  auto _uv = SI1145.ReadUV();
-
- String str = "abs";
+  global.MoisHumidity = humiditySensor.readHumidity();
+  global.WaterflowRate = waterFlowSensor.measure_flow_rate();
+  global.vis = SI1145.ReadVisible();
+  global.ir = SI1145.ReadIR();
+  global.uv = SI1145.ReadUV();
 
   //Code for running the different programs
-  switch(programInt != 0){
-      case 1:{
-        chilliProgram(MoisHumidity, WaterflowRate, _vis, _ir, _uv);
+  switch(encodercntr%2){
+      case 0:
+        overviewProgram();
         break;
-      }
-      case 2:{
+      
+      case 1:
+        SeeedOled.clearDisplay();
+        chilliProgram();
+        break;
+      
+      case 2:
+        SeeedOled.clearDisplay();
         carrotProgram();
         break;
-      }
-      default: {
-      overviewProgram(MoisHumidity, WaterflowRate, _vis, _ir, _uv);
-       
-      }
+      
+      default:
+        break;
     }
 }
 
@@ -129,9 +133,7 @@ void ButtonClick() {
 }
 
 //Shows readings from all sensors and starts pump with button
-void overviewProgram(int MoisHumidity, int WaterflowRate, int _vis, int _ir, int _uv){
-
-  displayText("Moisture: ",(int)(MoisHumidity) ,1 ,0 );
+void overviewProgram() {
 
 if (ButtonClicked == true) {
     if(isPumpOn == false){
@@ -146,26 +148,21 @@ if (ButtonClicked == true) {
     ButtonClicked = false;
   }
 
+  displayText("Moisture: ",(int)global.MoisHumidity ,1 ,0 );
   displayText("Encoder: ", encodercntr, 3, 0);
-  displayText("Waterflow: ", WaterflowRate, 4, 0);
-  displayText("Sun: ", (int)_vis, 5, 0);
-  displayText("IR: ", (int)_ir, 6, 0);
-  displayText("UV: ", (int)_uv, 7, 0);
+  displayText("Waterflow: ", global.WaterflowRate, 4, 0);
+  displayText("Sun: ", (int)global.vis, 5, 0);
+  displayText("IR: ", (int)global.ir, 6, 0);
+  displayText("UV: ", (int)global.uv, 7, 0);
   
   }
 
 //Method to be used by the loop for handling chilli plants
-void chilliProgram(int MoisHumidity, int WaterflowRate, int _vis, int _ir, int _uv){
+void chilliProgram()
+{
 
-  displayText("Moisture: ",(int)(MoisHumidity) ,1 ,0 );
-  displayText("Encoder: ", encodercntr, 3, 0);
-  displayText("Waterflow: ", WaterflowRate, 4, 0);
-  displayText("Sun: ", (int)_vis, 5, 0);
-  displayText("IR: ", (int)_ir, 6, 0);
-  displayText("UV: ", (int)_uv, 7, 0);
-
-  if(MoisHumidity < 50 && !isPumpOn){
-    myPump.on();
+  if(global.MoisHumidity < 50 && !isPumpOn){
+    //myPump.on();
     //isPumpOn = !isPumpOn;
     delay(3000);
     myPump.off();
@@ -173,8 +170,12 @@ void chilliProgram(int MoisHumidity, int WaterflowRate, int _vis, int _ir, int _
   }
   
 //Method to be used by the loop for handling chilli plants
-void carrotProgram(){
-  }
+void carrotProgram() {
+}
+
+void refreshScreen() {
+
+}
 
 int encoderPos = 0;
 int encoderPinLast = LOW;
@@ -191,4 +192,10 @@ int n = LOW;
     }
   }
  }
+
+
+
+
+
+
 
