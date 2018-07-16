@@ -90,14 +90,17 @@ void loop() {
 
   //Code for running the different programs
   switch(programInt != 0){
-      case 0:{
-    overviewProgram(MoisHumidity, WaterflowRate, _vis, _ir, _uv);
-      }
       case 1:{
-        chilliProgram();
+        chilliProgram(MoisHumidity, WaterflowRate, _vis, _ir, _uv);
+        break;
       }
       case 2:{
         carrotProgram();
+        break;
+      }
+      default: {
+      overviewProgram(MoisHumidity, WaterflowRate, _vis, _ir, _uv);
+       
       }
     }
 }
@@ -152,7 +155,21 @@ if (ButtonClicked == true) {
   }
 
 //Method to be used by the loop for handling chilli plants
-void chilliProgram(){
+void chilliProgram(int MoisHumidity, int WaterflowRate, int _vis, int _ir, int _uv){
+
+  displayText("Moisture: ",(int)(MoisHumidity) ,1 ,0 );
+  displayText("Encoder: ", encodercntr, 3, 0);
+  displayText("Waterflow: ", WaterflowRate, 4, 0);
+  displayText("Sun: ", (int)_vis, 5, 0);
+  displayText("IR: ", (int)_ir, 6, 0);
+  displayText("UV: ", (int)_uv, 7, 0);
+
+  if(MoisHumidity < 50 && !isPumpOn){
+    myPump.on();
+    //isPumpOn = !isPumpOn;
+    delay(3000);
+    myPump.off();
+  }
   }
   
 //Method to be used by the loop for handling chilli plants
