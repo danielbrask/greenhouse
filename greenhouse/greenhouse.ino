@@ -88,8 +88,6 @@ void loop() {
 
  String str = "abs";
 
-  
-
   //Code for running the different programs
   switch(programInt != 0){
       case 0:{
@@ -118,25 +116,9 @@ void displayText(const char* description, int value, int xCoordinate, int yCoord
   SeeedOled.putString(str.c_str());
 }
 
-// void displayText(const char* description, int xCoordinate, int yCoordiate) {
-//   SeeedOled.setTextXY(xCoordinate, yCoordinate);         //Set the cursor to Xth Page, Yth Column
-//   SeeedOled.putString(description);
-// }
-
-// class GrooveButton
-// {
-//   GrooveButton(int pin, void (*optionalCallBack)(int));
-//   public:
-//     bool isButtonPressed();
-//     void clearButtonPress();
-//   private:
-//     bool buttonPressedFlag;
-// }
-
 void ButtonClick() {
-
   if(digitalRead(ButtonPin) == 0) {
-    delay(20);
+    delay(10);
     if(digitalRead(ButtonPin) == 0) {
       ButtonClicked = true;
     }
@@ -176,3 +158,20 @@ void chilliProgram(){
 //Method to be used by the loop for handling chilli plants
 void carrotProgram(){
   }
+
+int encoderPos = 0;
+int encoderPinLast = LOW;
+int n = LOW;
+
+ void EncoderRotate() {
+     n = digitalRead(EncoderPin1);
+  if ( encoderPinLast == LOW && 
+         n == HIGH ) {
+    if ( digitalRead(EncoderPin2) == LOW ) {
+      encodercntr--;
+    } else {
+      encodercntr++;
+    }
+  }
+ }
+
