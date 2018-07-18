@@ -1,15 +1,15 @@
-#include <Wire.h>
-#include <SeeedOLED.h>
-#include <EEPROM.h>
+#include "Wire.h"
+#include "SeeedOLED.h"
+#include "EEPROM.h"
 #include "Arduino.h"
-#include <relay.h>
+#include "relay.h"
 #include "DHT.h"
 #include "SI114X.h"
 #include "soil_moisture_sensor.h"
 #include "GroveEncoder.h"
 #include "water_flow_sensor.h"
 
-const int DHTPIN = 0xA0;    // what pin we're connected to
+const int DHTPIN = 0xA0;
 const int MoisturePin = 0xA1;
 const int ButtonPin = 0x2;
 const uint8_t DHTTYPE = DHT11;
@@ -18,27 +18,18 @@ const int EncoderPin2 = 0x4;
 const int WaterflowPin = 0x5;
 const int RelayPin = 0x6;
 
-// counters for test
-bool isPumpOn = false;
-bool ButtonClicked = false;
-int clicks = 0;
-int encodercntr = 0;
+struct State{
+  float MoisHumidity = 0;
+  float WaterflowRate = 0;
+  
+  uint16_t  visibleLight = 0;
+  uint16_t  irLight = 0;
+  uint16_t  uvLight = 0;
+  uint16_t clicks = 0;
+  uint16_t encodercntr = 0;
 
-//Variables for displaying information on screen
-float value = 0;
-
-const int programInt = 0; // remove this after defining the proper way of handling programs
-
-void myCallback(int newValue) {
-  encodercntr++;
-}
-
-struct Global{
-  float MoisHumidity;
-  float WaterflowRate;
-  uint16_t  vis;
-  uint16_t  ir;
-  uint16_t  uv;
+  bool isPumpOn = false;
+  bool ButtonClicked = false;
 };
 
 Relay myPump(RelayPin);
@@ -78,25 +69,25 @@ void setup() {
    }
 }
 
-Global global;
+State state;
 
 void loop() {
 
-  global.MoisHumidity = humiditySensor.readHumidity();
-  global.WaterflowRate = waterFlowSensor.measure_flow_rate();
-  global.vis = SI1145.ReadVisible();
-  global.ir = SI1145.ReadIR();
-  global.uv = SI1145.ReadUV();
+  state.MoisHumidity = humiditySensor.readHumidity();
+  state.WaterflowRate = waterFlowSensor.measure_flow_rate();
+  state.visibleLight = SI1145.ReadVisible();
+  state.irLight = SI1145.ReadIR();
+  state.uvLight = SI1145.ReadUV();
 
   //Code for running the different programs
-  switch(encodercntr%2){
+  switch(state.encodercntr%2){
       case 0:
         overviewProgram();
         break;
       
       case 1:
         SeeedOled.clearDisplay();
-        chilliProgram();
+        chilliProgram(state);
         break;
       
       case 2:
@@ -127,7 +118,7 @@ void ButtonClick() {
   if(digitalRead(ButtonPin) == 0) {
     delay(10);
     if(digitalRead(ButtonPin) == 0) {
-      ButtonClicked = true;
+      state.ButtonClicked = true;
     }
   }
 }
@@ -135,33 +126,33 @@ void ButtonClick() {
 //Shows readings from all sensors and starts pump with button
 void overviewProgram() {
 
-if (ButtonClicked == true) {
-    if(isPumpOn == false){
+if (state.ButtonClicked == true) {
+    if(state.isPumpOn == false){
       myPump.on();
-      isPumpOn = !isPumpOn;
-    } else if(isPumpOn == true) {
+      state.isPumpOn = !state.isPumpOn;
+    } else if(state.isPumpOn == true) {
       myPump.off();
-      isPumpOn = !isPumpOn;
+      state.isPumpOn = !state.isPumpOn;
     }
-    displayText("Clicks: ", clicks, 2, 0);
-    clicks++;
-    ButtonClicked = false;
+    displayText("Clicks: ", state.clicks, 2, 0);
+    state.clicks++;
+    state.ButtonClicked = false;
   }
 
-  displayText("Moisture: ",(int)global.MoisHumidity ,1 ,0 );
-  displayText("Encoder: ", encodercntr, 3, 0);
-  displayText("Waterflow: ", global.WaterflowRate, 4, 0);
-  displayText("Sun: ", (int)global.vis, 5, 0);
-  displayText("IR: ", (int)global.ir, 6, 0);
-  displayText("UV: ", (int)global.uv, 7, 0);
+  displayText("Moisture: ",(int)state.MoisHumidity ,1 ,0 );
+  displayText("Encoder: ", state.encodercntr, 3, 0);
+  displayText("Waterflow: ", state.WaterflowRate, 4, 0);
+  displayText("Sun: ", (int)state.visibleLight, 5, 0);
+  displayText("IR: ", (int)state.irLight, 6, 0);
+  displayText("UV: ", (int)state.uvLight, 7, 0);
   
   }
 
 //Method to be used by the loop for handling chilli plants
-void chilliProgram()
+void chilliProgram(State& obj)
 {
 
-  if(global.MoisHumidity < 50 && !isPumpOn){
+  if(state.MoisHumidity < 50 && !state.isPumpOn){
     //myPump.on();
     //isPumpOn = !isPumpOn;
     delay(3000);
@@ -173,10 +164,6 @@ void chilliProgram()
 void carrotProgram() {
 }
 
-void refreshScreen() {
-
-}
-
 int encoderPos = 0;
 int encoderPinLast = LOW;
 int n = LOW;
@@ -186,16 +173,9 @@ int n = LOW;
   if ( encoderPinLast == LOW && 
          n == HIGH ) {
     if ( digitalRead(EncoderPin2) == LOW ) {
-      encodercntr--;
+      state.encodercntr--;
     } else {
-      encodercntr++;
+      state.encodercntr++;
     }
   }
  }
-
-
-
-
-
-
-
