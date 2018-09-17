@@ -127,10 +127,10 @@ void ButtonClick() {
 void overviewProgram() {
 
 if (state.ButtonClicked == true) {
-    if(state.isPumpOn == false){
+    if((state.isPumpOn == false) && (state.MoisHumidity > 355)){
       myPump.on();
       state.isPumpOn = !state.isPumpOn;
-    } else if(state.isPumpOn == true) {
+    } else if((state.isPumpOn == true) && (state.MoisHumidity < 355)) {
       myPump.off();
       state.isPumpOn = !state.isPumpOn;
     }
