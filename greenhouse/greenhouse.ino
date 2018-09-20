@@ -130,6 +130,7 @@ void ButtonClick() {
 }
 
 //Shows readings from all sensors and starts pump with button
+// Shall we add a Stop button as well; to stop the whole system???
 void overviewProgram() {
   if (state.ButtonClicked == true) {
     state.MoisHumidity = moistureSensor.read_humidity();
