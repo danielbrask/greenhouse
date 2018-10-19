@@ -11,12 +11,14 @@
 
 const int DHTPIN = 0xA0; //Temprature Humidity sensor
 const int MoisturePin = 0xA1; //Analogue
-const int ButtonPin = 0x2; //Digital
+const int ButtonPin = 0x2; //Digital for On
+const int ButtonPinOff = 0x3; //Digital for Off
 const uint8_t DHTTYPE = DHT11;
-const int EncoderPin1 = 0x3;
+const int EncoderPin1 = 0x8;
 const int EncoderPin2 = 0x4;
 const int WaterflowPin = 0x5;
-const int RelayPin = 0x6;
+const int RelayPin = 0x6; // Relay for light
+const int RelayPin2 = 0x7; //Relay for pump
 
 struct State {
   float MoisHumidity = 0;
@@ -32,9 +34,11 @@ struct State {
 
   bool isPumpOn = false;
   bool ButtonClicked = false;
+  bool ButtonClickedOff = false;
 };
 
-Relay myPump(RelayPin);
+Relay myLight(RelayPin); // For light
+Relay myPump(RelayPin2); // For pump
 SoilMoistureSensor moistureSensor(MoisturePin);
 SI114X SI1145 = SI114X();
 DHT humiditySensor(DHTPIN, DHTTYPE);
@@ -56,14 +60,18 @@ void setup() {
 
   /* Init Button */
   pinMode(ButtonPin, INPUT); //Set this pin to be input (pin 2 as initialized before)
-  attachInterrupt(0, ButtonClick, FALLING);
+  attachInterrupt(digitalPinToInterrupt(2), ButtonClick, FALLING);
 
-  //pinMode(EncoderPin1, INPUT);
-  pinMode(EncoderPin2, INPUT);
-  attachInterrupt(1, EncoderRotate, RISING);
+  pinMode(ButtonPinOff, INPUT); //Set this pin to be input (pin 2 as initialized before)
+  attachInterrupt(digitalPinToInterrupt(3), ButtonClickOff, FALLING);
+
+//  //pinMode(EncoderPin1, INPUT);
+//  pinMode(EncoderPin2, INPUT);
+//  attachInterrupt(1, EncoderRotate, RISING);
 
   pinMode(WaterflowPin, INPUT);
-  pinMode(RelayPin, OUTPUT);
+  pinMode(RelayPin, OUTPUT); // Pump
+  pinMode(RelayPin2, OUTPUT); //Light
 
   /* Init UV */
   while (!SI1145.Begin()) {
@@ -75,11 +83,11 @@ State state;
 
 void loop() {
 
-  state.MoisHumidity = moistureSensor.read_humidity();
+  state.MoisHumidity = moistureSensor.read_humidity(); // Reading values from Humidity sensor
   state.WaterflowRate = waterFlowSensor.measure_flow_rate();
   state.visibleLight = SI1145.ReadVisible();
   state.irLight = SI1145.ReadIR();
-  state.uvLight = SI1145.ReadUV();
+  state.uvLight = SI1145.ReadUV(); // Read from UV sensor
   state.moisture = moistureSensor.read_humidity();
 
   overviewProgram();
@@ -129,37 +137,71 @@ void ButtonClick() {
   }
 }
 
+
+void ButtonClickOff() {
+  if (digitalRead(ButtonPinOff) == 0) {
+    delay(10);
+    if (digitalRead(ButtonPinOff) == 0) {
+      state.ButtonClickedOff = true;
+    }
+  }
+}
+
+
 //Shows readings from all sensors and starts pump with button
-// Shall we add a Stop button as well; to stop the whole system???
 void overviewProgram() {
   if (state.ButtonClicked == true) {
     state.MoisHumidity = moistureSensor.read_humidity();
     displayText("Moisture: ", state.MoisHumidity , 1 , 0 );
-    while (state.MoisHumidity < 500) {
+    state.uvLight = SI1145.ReadUV();
+    displayText("UV: ", (int)state.uvLight, 7, 0);
+
+    while ((0<state.MoisHumidity)&&(state.MoisHumidity < 600)) {
       state.MoisHumidity = moistureSensor.read_humidity();
       displayText("Moisture: ", state.MoisHumidity , 1 , 0 );
+      state.uvLight = SI1145.ReadUV();
+      displayText("UV: ", (int)state.uvLight, 7, 0);
       delay(250);
+
+      if(state.uvLight<90){
+        myLight.on();
+      }
+      else if(state.uvLight>90){
+        myLight.off();
+      }
+
+
+      if(state.ButtonClickedOff == true){
+        myPump.off();
+        myLight.off();
+        state.ButtonClicked == true;
+        break;
+      }
+
       myPump.on();
       delay(1000);
       myPump.off();
       delay(1000);
       state.MoisHumidity = moistureSensor.read_humidity();
       displayText("Moisture: ", state.MoisHumidity , 1 , 0 );
+      displayText("UV: ", (int)state.uvLight, 7, 0);
       delay(250);
     }
+
     displayText("Moisture: ", state.MoisHumidity , 1 , 0 );
+    displayText("UV: ", (int)state.uvLight, 7, 0);
     displayText("Clicks: ", state.clicks, 2, 0);
     //state.clicks++;
-    //state.ButtonClicked = false;
+
   }
-  myPump.off();
   displayText("Moisture: ", state.MoisHumidity , 1 , 0 );
   displayText("Encoder: ", state.encodercntr, 3, 0);
   displayText("Waterflow: ", state.WaterflowRate, 4, 0);
   displayText("Sun: ", (int)state.visibleLight, 5, 0);
   displayText("IR: ", (int)state.irLight, 6, 0);
   displayText("UV: ", (int)state.uvLight, 7, 0);
-
+  state.ButtonClicked = false;
+  state.ButtonClickedOff = false;
 
 }
 
