@@ -20,6 +20,9 @@ const int WaterflowPin = 0x5;
 const int RelayPin = 0x6; // Relay for light
 const int RelayPin2 = 0x7; //Relay for pump
 
+
+
+
 struct State {
   float MoisHumidity = 0;
   float WaterflowRate = 0;
@@ -60,14 +63,14 @@ void setup() {
 
   /* Init Button */
   pinMode(ButtonPin, INPUT); //Set this pin to be input (pin 2 as initialized before)
-  attachInterrupt(digitalPinToInterrupt(2), ButtonClick, FALLING);
+  attachInterrupt(0, ButtonClick, FALLING);
 
   pinMode(ButtonPinOff, INPUT); //Set this pin to be input (pin 2 as initialized before)
-  attachInterrupt(digitalPinToInterrupt(3), ButtonClickOff, FALLING);
+  attachInterrupt(1, ButtonClickOff, FALLING);
 
-//  //pinMode(EncoderPin1, INPUT);
-//  pinMode(EncoderPin2, INPUT);
-//  attachInterrupt(1, EncoderRotate, RISING);
+  //  //pinMode(EncoderPin1, INPUT);
+  //  pinMode(EncoderPin2, INPUT);
+  //  attachInterrupt(1, EncoderRotate, RISING);
 
   pinMode(WaterflowPin, INPUT);
   pinMode(RelayPin, OUTPUT); // Pump
@@ -88,7 +91,7 @@ void loop() {
   state.visibleLight = SI1145.ReadVisible();
   state.irLight = SI1145.ReadIR();
   state.uvLight = SI1145.ReadUV(); // Read from UV sensor
-  state.moisture = moistureSensor.read_humidity();
+  //state.moisture = moistureSensor.read_humidity();
 
   overviewProgram();
 
@@ -130,7 +133,7 @@ void displayText(const char* description, int value, int xCoordinate, int yCoord
 
 void ButtonClick() {
   if (digitalRead(ButtonPin) == 0) {
-    delay(10);
+    //delay(10);
     if (digitalRead(ButtonPin) == 0) {
       state.ButtonClicked = true;
     }
@@ -140,7 +143,7 @@ void ButtonClick() {
 
 void ButtonClickOff() {
   if (digitalRead(ButtonPinOff) == 0) {
-    delay(10);
+    //delay(10);
     if (digitalRead(ButtonPinOff) == 0) {
       state.ButtonClickedOff = true;
     }
@@ -150,90 +153,161 @@ void ButtonClickOff() {
 
 //Shows readings from all sensors and starts pump with button
 void overviewProgram() {
-  if (state.ButtonClicked == true) {
-    state.MoisHumidity = moistureSensor.read_humidity();
-    displayText("Moisture: ", state.MoisHumidity , 1 , 0 );
-    state.uvLight = SI1145.ReadUV();
-    displayText("UV: ", (int)state.uvLight, 7, 0);
 
-    while ((0<state.MoisHumidity)&&(state.MoisHumidity < 600)) {
+  if (state.ButtonClickedOff == true) {
+    delay(250);
+    //state.ButtonClicked = false;
+    myLight.off();
+    delay(250);
+    myPump.off();
+    delay(250);
+    state.ButtonClicked = false;
+    //state.ButtonClickedOff = false;
+  }
+
+  else if (state.ButtonClicked == true) {
+
+    // delay (250);
+    state.ButtonClickedOff = false;
+    //    state.MoisHumidity = moistureSensor.read_humidity();
+    //    displayText("Moisture: ", state.MoisHumidity , 1 , 0 );
+    //    state.visibleLight = SI1145.ReadVisible();
+    //    displayText("Sun: ", (int)state.visibleLight, 5, 0);
+
+    while (state.MoisHumidity < 400) {
       state.MoisHumidity = moistureSensor.read_humidity();
       displayText("Moisture: ", state.MoisHumidity , 1 , 0 );
-      state.uvLight = SI1145.ReadUV();
-      displayText("UV: ", (int)state.uvLight, 7, 0);
-      delay(250);
+      delay(500);
+      state.visibleLight = SI1145.ReadVisible();
+      displayText("Sun: ", (int)state.visibleLight, 5, 0);
 
-      if(state.uvLight<90){
-        myLight.on();
+
+      do {
+        if (state.ButtonClickedOff == true) {
+          state.ButtonClickedOff = true;
+          state.ButtonClicked = false;
+          break;
+        }
+        else {
+          myPump.on();
+          delay(1000);
+          myPump.off();
+          delay(1000);
+        }
+
+        if (state.visibleLight < 290) {
+          myLight.on();
+        }
+        else {
+          myLight.off();
+        }
+      } while (state.ButtonClickedOff = false);
+
+      if (state.ButtonClickedOff == true) {
+        state.ButtonClickedOff = true;
+        state.ButtonClicked = false;
+        break;
       }
-      else if(state.uvLight>90){
-        myLight.off();
-      }
+    }
 
 
-      if(state.ButtonClickedOff == true){
-        myPump.off();
-        myLight.off();
-        state.ButtonClicked == true;
+
+
+    while (state.MoisHumidity > 400) {
+      state.MoisHumidity = moistureSensor.read_humidity();
+      displayText("Moisture: ", state.MoisHumidity , 1 , 0 );
+      delay(500);
+      state.visibleLight = SI1145.ReadVisible();
+      displayText("Sun: ", (int)state.visibleLight, 5, 0);
+      delay(500);
+
+
+      if (state.ButtonClickedOff == true) {
+        state.ButtonClicked = false;
         break;
       }
 
-      myPump.on();
-      delay(1000);
-      myPump.off();
-      delay(1000);
-      state.MoisHumidity = moistureSensor.read_humidity();
-      displayText("Moisture: ", state.MoisHumidity , 1 , 0 );
-      displayText("UV: ", (int)state.uvLight, 7, 0);
-      delay(250);
+      else {
+        if (state.visibleLight < 290) {
+          myLight.on();
+        }
+        else if (state.visibleLight > 290) {
+          myLight.off();
+        }
+        myPump.off();
+      }
     }
 
+
+
+
     displayText("Moisture: ", state.MoisHumidity , 1 , 0 );
-    displayText("UV: ", (int)state.uvLight, 7, 0);
+    displayText("Sun: ", (int)state.visibleLight, 5, 0);
     displayText("Clicks: ", state.clicks, 2, 0);
     //state.clicks++;
 
+    if (state.ButtonClickedOff == true) {
+      delay(250);
+      //state.ButtonClicked = false;
+      myLight.off();
+      delay(250);
+      myPump.off();
+      delay(250);
+      state.ButtonClicked = false;
+      state.ButtonClickedOff = false;
+    }
+
   }
+
+
   displayText("Moisture: ", state.MoisHumidity , 1 , 0 );
   displayText("Encoder: ", state.encodercntr, 3, 0);
   displayText("Waterflow: ", state.WaterflowRate, 4, 0);
   displayText("Sun: ", (int)state.visibleLight, 5, 0);
   displayText("IR: ", (int)state.irLight, 6, 0);
   displayText("UV: ", (int)state.uvLight, 7, 0);
-  state.ButtonClicked = false;
-  state.ButtonClickedOff = false;
+  //state.ButtonClicked = false;
+  //state.ButtonClickedOff = false;
 
 }
 
 
-//Method to be used by the loop for handling chilli plants
-void chilliProgram(State& obj)
-{
 
-  if (state.MoisHumidity < 50 && !state.isPumpOn) {
-    //myPump.on();
-    //isPumpOn = !isPumpOn;
-    delay(3000);
-    myPump.off();
-  }
-}
 
-//Method to be used by the loop for handling chilli plants
-void carrotProgram() {
-}
 
-int encoderPos = 0;
-int encoderPinLast = LOW;
-int n = LOW;
 
-void EncoderRotate() {
-  n = digitalRead(EncoderPin1);
-  if ( encoderPinLast == LOW &&
-       n == HIGH ) {
-    if ( digitalRead(EncoderPin2) == LOW ) {
-      state.encodercntr--;
-    } else {
-      state.encodercntr++;
-    }
-  }
-}
+
+
+
+
+////Method to be used by the loop for handling chilli plants
+//void chilliProgram(State& obj)
+//{
+//
+//  if (state.MoisHumidity < 50 && !state.isPumpOn) {
+//    //myPump.on();
+//    //isPumpOn = !isPumpOn;
+//    delay(3000);
+//    myPump.off();
+//  }
+//}
+//
+////Method to be used by the loop for handling chilli plants
+//void carrotProgram() {
+//}
+//
+//int encoderPos = 0;
+//int encoderPinLast = LOW;
+//int n = LOW;
+//
+//void EncoderRotate() {
+//  n = digitalRead(EncoderPin1);
+//  if ( encoderPinLast == LOW &&
+//       n == HIGH ) {
+//    if ( digitalRead(EncoderPin2) == LOW ) {
+//      state.encodercntr--;
+//    } else {
+//      state.encodercntr++;
+//    }
+//  }
+//}
