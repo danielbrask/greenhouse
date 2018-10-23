@@ -21,7 +21,8 @@ const int RelayPin = 0x6; // Relay for light
 const int RelayPin2 = 0x7; //Relay for pump
 
 
-
+const int buttonPin2 = 2;
+const int buttonPin3 = 3;
 
 struct State {
   float MoisHumidity = 0;
@@ -63,10 +64,10 @@ void setup() {
 
   /* Init Button */
   pinMode(ButtonPin, INPUT); //Set this pin to be input (pin 2 as initialized before)
-  attachInterrupt(0, ButtonClick, FALLING);
+  attachInterrupt(digitalPinToInterrupt(buttonPin2), ButtonClick, FALLING);
 
   pinMode(ButtonPinOff, INPUT); //Set this pin to be input (pin 2 as initialized before)
-  attachInterrupt(1, ButtonClickOff, FALLING);
+  attachInterrupt(digitalPinToInterrupt(buttonPin3), ButtonClickOff, FALLING);
 
   //  //pinMode(EncoderPin1, INPUT);
   //  pinMode(EncoderPin2, INPUT);
@@ -133,7 +134,7 @@ void displayText(const char* description, int value, int xCoordinate, int yCoord
 
 void ButtonClick() {
   if (digitalRead(ButtonPin) == 0) {
-    //delay(10);
+    delay(10);
     if (digitalRead(ButtonPin) == 0) {
       state.ButtonClicked = true;
     }
@@ -143,7 +144,7 @@ void ButtonClick() {
 
 void ButtonClickOff() {
   if (digitalRead(ButtonPinOff) == 0) {
-    //delay(10);
+    delay(10);
     if (digitalRead(ButtonPinOff) == 0) {
       state.ButtonClickedOff = true;
     }
@@ -154,18 +155,18 @@ void ButtonClickOff() {
 //Shows readings from all sensors and starts pump with button
 void overviewProgram() {
 
-  if (state.ButtonClickedOff == true) {
-    delay(250);
-    //state.ButtonClicked = false;
-    myLight.off();
-    delay(250);
-    myPump.off();
-    delay(250);
-    state.ButtonClicked = false;
-    //state.ButtonClickedOff = false;
-  }
+  //  if (state.ButtonClickedOff == true) {
+  //    //delay(250);
+  //    //state.ButtonClicked = false;
+  //    myLight.off();
+  //    delay(250);
+  //    myPump.off();
+  //    delay(250);
+  //    state.ButtonClicked = false;
+  //    //state.ButtonClickedOff = false;
+  //  }
 
-  else if (state.ButtonClicked == true) {
+  if (state.ButtonClicked == true) {
 
     // delay (250);
     state.ButtonClickedOff = false;
@@ -183,17 +184,21 @@ void overviewProgram() {
 
 
       do {
+        myPump.on();
+        delay(1000);
+        myPump.off();
+        delay(1000);
         if (state.ButtonClickedOff == true) {
           state.ButtonClickedOff = true;
           state.ButtonClicked = false;
           break;
         }
-        else {
-          myPump.on();
-          delay(1000);
-          myPump.off();
-          delay(1000);
-        }
+        //        else {
+        //          myPump.on();
+        //          delay(1000);
+        //          myPump.off();
+        //          delay(1000);
+        //        }
 
         if (state.visibleLight < 290) {
           myLight.on();
@@ -245,20 +250,30 @@ void overviewProgram() {
     displayText("Sun: ", (int)state.visibleLight, 5, 0);
     displayText("Clicks: ", state.clicks, 2, 0);
     //state.clicks++;
-
-    if (state.ButtonClickedOff == true) {
-      delay(250);
-      //state.ButtonClicked = false;
-      myLight.off();
-      delay(250);
-      myPump.off();
-      delay(250);
-      state.ButtonClicked = false;
-      state.ButtonClickedOff = false;
-    }
+    state.ButtonClickedOff == true;
+    //     if (state.ButtonClickedOff == true) {
+    //      //delay(250);
+    //      //state.ButtonClicked = false;
+    //      myLight.off();
+    //      delay(250);
+    //      myPump.off();
+    //      delay(250);
+    //      state.ButtonClicked = false;
+    //      state.ButtonClickedOff = false;
+    //    }
 
   }
 
+  else if (state.ButtonClickedOff == true) {
+    //delay(250);
+    //state.ButtonClicked = false;
+    myLight.off();
+    delay(250);
+    myPump.off();
+    delay(250);
+    state.ButtonClicked = false;
+    state.ButtonClickedOff = false;
+  }
 
   displayText("Moisture: ", state.MoisHumidity , 1 , 0 );
   displayText("Encoder: ", state.encodercntr, 3, 0);
@@ -277,7 +292,7 @@ void overviewProgram() {
 
 
 
-//
+
 
 
 ////Method to be used by the loop for handling chilli plants
